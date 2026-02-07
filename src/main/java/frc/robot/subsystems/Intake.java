@@ -49,16 +49,16 @@ public class Intake extends SubsystemBase {
     rollerMotor.getConfigurator().apply(rollerConfig);
   }
 
-  private void run() {
+  private void runRoller() {
     setRollerSpeed(Constants.Intake.ROLLER_SPEED);
   }
 
-  private void stop() {
+  private void stopRoller() {
     setRollerSpeed(0);
   }
 
   public Command runCommand() {
-    return startEnd(() -> run(), () -> stop());
+    return startEnd(() -> runRoller(), () -> stopRoller());
   }
 
   public Command runCommand(DoubleSupplier speedSupplier) {
@@ -67,6 +67,14 @@ public class Intake extends SubsystemBase {
           double speed = speedSupplier.getAsDouble();
           setRollerSpeed(speed);
         },
-        () -> stop());
+        () -> stopRoller());
+  }
+
+  public void runArm() {
+    setArmSpeed(Constants.Intake.LIFT_SPEED);
+  }
+
+  public void stopArm() {
+    setArmSpeed(0);
   }
 }
