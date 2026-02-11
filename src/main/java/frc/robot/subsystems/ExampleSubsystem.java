@@ -8,6 +8,8 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
+import static edu.wpi.first.units.Units.Feet;
+import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Seconds;
 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -18,6 +20,8 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import yams.mechanisms.SmartMechanism;
+import yams.mechanisms.config.ArmConfig;
+import yams.mechanisms.positional.Arm;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
@@ -53,6 +57,22 @@ public class ExampleSubsystem extends SubsystemBase {
   // Create our SmartMotorController from our Spark and config with the NEO.
   private SmartMotorController sparkSmartMotorController = new SparkWrapper(spark, DCMotor.getNEO(1), smcConfig);
 
+  private ArmConfig armCfg = new ArmConfig(sparkSmartMotorController)
+  // Soft limit is applied to the SmartMotorControllers PID
+  .withSoftLimits(Degrees.of(-20), Degrees.of(10))
+  // Hard limit is applied to the simulation.
+  .withHardLimit(Degrees.of(-30), Degrees.of(40))
+  // Starting position is where your arm starts
+  .withStartingPosition(Degrees.of(-5))
+  // Length and mass of your arm for sim.
+  .withLength(Feet.of(3))
+  .withMass(Pounds.of(1))
+  // Telemetry name and verbosity for the arm.
+  .withTelemetry("Arm", TelemetryVerbosity.HIGH);
+
+  // Arm Mechanism
+  private Arm arm = new Arm(armCfg);
+
   /** Creates a new ExampleSubsystem. */
   public ExampleSubsystem() {}
 
@@ -83,10 +103,12 @@ public class ExampleSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    arm.updateTelemetry();
   }
 
   @Override
   public void simulationPeriodic() {
     // This method will be called once per scheduler run during simulation
+    arm.simIterate();
   }
 }
