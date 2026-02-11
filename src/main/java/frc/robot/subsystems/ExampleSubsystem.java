@@ -90,7 +90,7 @@ public class ExampleSubsystem extends SubsystemBase {
    * @param angle Angle to go to.
    * @return A Command
    */
-  public Command setAngleAndStop(Angle angle) { return arm.runTo(angle);}
+  public Command setAngleAndStop(Angle angle) { return arm.runTo(angle, Angle.ofBaseUnits(3, Degrees));}
   
   /**
    * Set arm closed loop controller to go to the specified mechanism position.
