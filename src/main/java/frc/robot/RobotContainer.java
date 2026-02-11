@@ -189,7 +189,8 @@ public class RobotContainer {
           .whileTrue(
               drivebase.driveToPose(
                   new Pose2d(new Translation2d(14, 3), Rotation2d.fromDegrees(180))));
-      driverXbox.rightBumper().whileTrue(intakeSystem.setAngle(90.0));
+      driverXbox.rightBumper().whileTrue(intakeSystem.setAngleAndStop(30.0));
+      driverXbox.leftBumper().whileTrue(intakeSystem.setAngleAndStop(-10.0));
     }
     if (DriverStation.isTest()) {
       drivebase.setDefaultCommand(

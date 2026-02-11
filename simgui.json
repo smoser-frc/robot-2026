@@ -50,6 +50,9 @@
         "header": {
           "open": true
         }
+      },
+      "window": {
+        "visible": false
       }
     }
   },
@@ -138,6 +141,15 @@
       },
       "SmartDashboard": {
         "Field": {
+          "open": true
+        },
+        "Mechanisms": {
+          "Commands": {
+            "open": true
+          },
+          "open": true
+        },
+        "Motors": {
           "open": true
         },
         "open": true,
