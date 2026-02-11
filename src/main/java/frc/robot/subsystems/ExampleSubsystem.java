@@ -5,9 +5,13 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
+
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -32,7 +36,6 @@ public class ExampleSubsystem extends SubsystemBase {
   .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
   // Gearing from the motor rotor to final shaft.
   // In this example GearBox.fromReductionStages(3,4) is the same as GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to your motor.
-  // You could also use .withGearing(12) which does the same thing.
   .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
   // Motor properties to prevent over currenting.
   .withMotorInverted(false)
@@ -40,6 +43,10 @@ public class ExampleSubsystem extends SubsystemBase {
   .withStatorCurrentLimit(Amps.of(40))
   .withClosedLoopRampRate(Seconds.of(0.25))
   .withOpenLoopRampRate(Seconds.of(0.25));
+
+  // Vendor motor controller object
+  private SparkMax spark = new SparkMax(4, MotorType.kBrushless);
+
 
   /** Creates a new ExampleSubsystem. */
   public ExampleSubsystem() {}
@@ -78,4 +85,3 @@ public class ExampleSubsystem extends SubsystemBase {
     // This method will be called once per scheduler run during simulation
   }
 }
-
