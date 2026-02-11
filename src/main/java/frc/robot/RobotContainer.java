@@ -8,6 +8,9 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.ExampleSubsystem;
+
+import static edu.wpi.first.units.Units.Degrees;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -30,6 +33,9 @@ public class RobotContainer {
   public RobotContainer() {
     // Configure the trigger bindings
     configureBindings();
+
+    // Set the default command to force the arm to go to 0.
+    m_exampleSubsystem.setDefaultCommand(m_exampleSubsystem.setAngle(Degrees.of(0)));
   }
 
   /**
@@ -42,13 +48,16 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
-    new Trigger(m_exampleSubsystem::exampleCondition)
-        .onTrue(new ExampleCommand(m_exampleSubsystem));
-
-    // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
+    
+    // Schedule `setAngle` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
+    m_driverController.a().whileTrue(m_exampleSubsystem.setAngle(Degrees.of(-5)));
+    m_driverController.b().whileTrue(m_exampleSubsystem.setAngle(Degrees.of(15)));
+    // Schedule `set` when the Xbox controller's B button is pressed,
+    // cancelling on release.
+    m_driverController.x().whileTrue(m_exampleSubsystem.set(0.3));
+    m_driverController.y().whileTrue(m_exampleSubsystem.set(-0.3));
+
   }
 
   /**
