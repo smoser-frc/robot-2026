@@ -96,7 +96,7 @@ public class ExampleSubsystem extends SubsystemBase {
    * Set arm closed loop controller to go to the specified mechanism position.
    * @param angle Angle to go to.
    */
-  public void setAngleSetpoint(Angle angle) { arm.setMechanismPosition(angle); }
+  public void setAngleSetpoint(Angle angle) { arm.setMechanismPositionSetpoint(angle); }
 
   /**
    * Move the arm up and down.
