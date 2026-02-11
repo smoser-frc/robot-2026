@@ -10,13 +10,16 @@ import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Pounds;
+import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import yams.mechanisms.SmartMechanism;
@@ -72,6 +75,37 @@ public class ExampleSubsystem extends SubsystemBase {
 
   // Arm Mechanism
   private Arm arm = new Arm(armCfg);
+
+  /**
+   * Set the angle of the arm, does not stop when the arm reaches the setpoint.
+   * @param angle Angle to go to.
+   * @return A command.
+   */
+  public Command setAngle(Angle angle) { return arm.run(angle);}
+  
+  /**
+   * Set the angle of the arm, ends the command but does not stop the arm when the arm reaches the setpoint.
+   * @param angle Angle to go to.
+   * @return A Command
+   */
+  public Command setAngleAndStop(Angle angle) { return arm.runTo(angle);}
+  
+  /**
+   * Set arm closed loop controller to go to the specified mechanism position.
+   * @param angle Angle to go to.
+   */
+  public void setAngleSetpoint(Angle angle) { arm.setMechanismPosition(angle); }
+
+  /**
+   * Move the arm up and down.
+   * @param dutycycle [-1, 1] speed to set the arm too.
+   */
+  public Command set(double dutycycle) { return arm.set(dutycycle);}
+
+  /**
+   * Run sysId on the {@link Arm}
+   */
+  public Command sysId() { return arm.sysId(Volts.of(7), Volts.of(2).per(Second), Seconds.of(4));}
 
   /** Creates a new ExampleSubsystem. */
   public ExampleSubsystem() {}
