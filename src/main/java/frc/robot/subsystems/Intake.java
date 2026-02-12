@@ -148,4 +148,16 @@ public class Intake extends SubsystemBase {
         },
         () -> stopRoller());
   }
+
+  @Override
+  public void periodic() {
+    // This method will be called once per scheduler run
+    lift.updateTelemetry();
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    // This method will be called once per scheduler run during simulation
+    lift.simIterate();
+  }
 }
