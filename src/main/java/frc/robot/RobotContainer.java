@@ -118,6 +118,8 @@ public class RobotContainer {
     configureBindings();
     DriverStation.silenceJoystickConnectionWarning(true);
 
+    intakeSystem.setDefaultCommand(intakeSystem.setAngle(0.0));
+
     // Create the NamedCommands that will be used in PathPlanner
     NamedCommands.registerCommand("test", Commands.print("I EXIST"));
 
