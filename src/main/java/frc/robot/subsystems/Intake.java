@@ -13,7 +13,6 @@ import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkMax;
-
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
@@ -31,7 +30,6 @@ import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 import yams.motorcontrollers.local.SparkWrapper;
-import yams.motorcontrollers.remote.TalonFXWrapper;
 
 // initializes intake arm and roller motors
 public class Intake extends SubsystemBase {
@@ -66,15 +64,15 @@ public class Intake extends SubsystemBase {
           .withClosedLoopRampRate(Seconds.of(0.25))
           .withOpenLoopRampRate(Seconds.of(0.25));
 
-
-    // Vendor motor controller object
+  // Vendor motor controller object
   private SparkMax spark = new SparkMax(32, SparkLowLevel.MotorType.kBrushless);
 
   // Create our SmartMotorController from our Spark and config with the NEO.
-  private SmartMotorController sparkSmartMotorController = new SparkWrapper(spark, DCMotor.getNEO(1), liftConfig);
+  private SmartMotorController sparkSmartMotorController =
+      new SparkWrapper(spark, DCMotor.getNEO(1), liftConfig);
 
   // Create our SmartMotorController from our Spark and config with the NEO.
-  //private SmartMotorController liftSmartMotorController =
+  // private SmartMotorController liftSmartMotorController =
   //    new TalonFXWrapper(liftMotor, DCMotor.getKrakenX60(1), liftConfig);
 
   private ArmConfig liftCfg =
@@ -141,5 +139,17 @@ public class Intake extends SubsystemBase {
           setRollerSpeed(speed);
         },
         () -> stopRoller());
+  }
+
+  @Override
+  public void periodic() {
+    // This method will be called once per scheduler run
+    lift.updateTelemetry();
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    // This method will be called once per scheduler run during simulation
+    lift.simIterate();
   }
 }
