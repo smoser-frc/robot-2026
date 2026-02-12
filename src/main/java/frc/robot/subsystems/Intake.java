@@ -9,11 +9,11 @@ import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.revrobotics.spark.SparkLowLevel;
+import com.revrobotics.spark.SparkMax;
+
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
@@ -30,21 +30,13 @@ import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
+import yams.motorcontrollers.local.SparkWrapper;
 import yams.motorcontrollers.remote.TalonFXWrapper;
 
 // initializes intake arm and roller motors
 public class Intake extends SubsystemBase {
   private final TalonFX liftMotor = new TalonFX(Constants.Intake.LIFT_MOTOR_ID);
   private final TalonFX rollerMotor = new TalonFX(Constants.Intake.ROLLER_MOTOR_ID);
-
-  // Roller Motor Config
-  public void configureRollerMotor() {
-    TalonFXConfiguration rollerConfig = new TalonFXConfiguration();
-    rollerConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-    rollerConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-
-    rollerMotor.getConfigurator().apply(rollerConfig);
-  }
 
   private final DutyCycleOut rollerDutyCycle = new DutyCycleOut(0);
 
@@ -74,12 +66,19 @@ public class Intake extends SubsystemBase {
           .withClosedLoopRampRate(Seconds.of(0.25))
           .withOpenLoopRampRate(Seconds.of(0.25));
 
+
+    // Vendor motor controller object
+  private SparkMax spark = new SparkMax(32, SparkLowLevel.MotorType.kBrushless);
+
   // Create our SmartMotorController from our Spark and config with the NEO.
-  private SmartMotorController liftSmartMotorController =
-      new TalonFXWrapper(liftMotor, DCMotor.getKrakenX60(1), liftConfig);
+  private SmartMotorController sparkSmartMotorController = new SparkWrapper(spark, DCMotor.getNEO(1), liftConfig);
+
+  // Create our SmartMotorController from our Spark and config with the NEO.
+  //private SmartMotorController liftSmartMotorController =
+  //    new TalonFXWrapper(liftMotor, DCMotor.getKrakenX60(1), liftConfig);
 
   private ArmConfig liftCfg =
-      new ArmConfig(liftSmartMotorController)
+      new ArmConfig(sparkSmartMotorController)
           // Soft limit is applied to the SmartMotorControllers PID
           .withSoftLimits(Degrees.of(-20), Degrees.of(10))
           // Hard limit is applied to the simulation.
@@ -95,23 +94,18 @@ public class Intake extends SubsystemBase {
   // Arm Mechanism
   private Arm lift = new Arm(liftCfg);
 
-  public Intake() {
-    configureRollerMotor();
-  }
+  public Intake() {}
 
   public Command setAngle(Double angle) {
-    Angle convertedAngle = Angle.ofRelativeUnits(angle, Degrees);
-    return lift.run(convertedAngle);
+    return lift.run(Degrees.of(angle));
   }
 
   public Command setAngleAndStop(Double angle) {
-    Angle convertedAngle = Angle.ofRelativeUnits(angle, Degrees);
-    return lift.runTo(convertedAngle, Angle.ofRelativeUnits(2, Degrees));
+    return lift.runTo(Degrees.of(angle), Angle.ofBaseUnits(3, Degrees));
   }
 
   public void setAngleSetpoint(Double angle) {
-    Angle convertedAngle = Angle.ofRelativeUnits(angle, Degrees);
-    lift.setMechanismPositionSetpoint(convertedAngle);
+    lift.setMechanismPositionSetpoint(Degrees.of(angle));
   }
 
   public Command set(double dutycycle) {
