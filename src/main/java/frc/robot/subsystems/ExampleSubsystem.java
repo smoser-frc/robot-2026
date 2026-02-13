@@ -16,6 +16,7 @@ import static edu.wpi.first.units.Units.Volts;
 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -33,6 +34,7 @@ import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 import yams.motorcontrollers.local.SparkWrapper;
+import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class ExampleSubsystem extends SubsystemBase {
 
@@ -57,12 +59,15 @@ public class ExampleSubsystem extends SubsystemBase {
   .withOpenLoopRampRate(Seconds.of(0.25));
 
   // Vendor motor controller object
-  private SparkMax spark = new SparkMax(4, MotorType.kBrushless);
+  // private SparkMax spark = new SparkMax(4, MotorType.kBrushless);
+  private TalonFX talon = new TalonFX(4);
 
   // Create our SmartMotorController from our Spark and config with the NEO.
-  private SmartMotorController sparkSmartMotorController = new SparkWrapper(spark, DCMotor.getNEO(1), smcConfig);
+  // private SmartMotorController armSmartMotorController = new SparkWrapper(spark, DCMotor.getNEO(1), smcConfig);
+  private SmartMotorController armSmartMotorController =
+      new TalonFXWrapper(talon, DCMotor.getKrakenX60(1), smcConfig);
 
-  private ArmConfig armCfg = new ArmConfig(sparkSmartMotorController)
+  private ArmConfig armCfg = new ArmConfig(armSmartMotorController)
   // Soft limit is applied to the SmartMotorControllers PID
   .withSoftLimits(Degrees.of(-20), Degrees.of(10))
   // Hard limit is applied to the simulation.
