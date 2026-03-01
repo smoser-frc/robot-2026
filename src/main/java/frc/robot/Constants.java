@@ -90,6 +90,13 @@ public final class Constants {
     public static final double TURRET_SPEED = 0.05;
     // Turret gearing: motor rotations -> turret rotations
     public static final double TURRET_GEAR_RATIO = 40.0;
+    // Turret legal travel range (deg). Outside this is the dead zone.
+    public static final double MIN_ANGLE_DEG = 30.0;
+    public static final double MAX_ANGLE_DEG = 330.0;
+    // Keep commanded setpoints off the exact edges to reduce chatter.
+    public static final double EDGE_GUARD_DEG = 3.0;
+    // Amount past the opposite edge required before latch can switch sides.
+    public static final double LATCH_SWITCH_HYSTERESIS_DEG = 10.0;
     // PID for turret position (motor rotations)
     public static final double TURRET_P = 1.0;
     public static final double TURRET_I = 0.0;

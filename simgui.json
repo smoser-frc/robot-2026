@@ -50,6 +50,9 @@
         "header": {
           "open": true
         }
+      },
+      "window": {
+        "visible": false
       }
     }
   },
@@ -67,6 +70,7 @@
       "/SmartDashboard/Field": "Field2d",
       "/SmartDashboard/IMU": "Alerts",
       "/SmartDashboard/JSON": "Alerts",
+      "/SmartDashboard/Mechanisms/Commands/Index/Live Tuning": "Command",
       "/SmartDashboard/Mechanisms/Commands/Intake/Live Tuning": "Command",
       "/SmartDashboard/Mechanisms/Commands/Launch/Live Tuning": "Command",
       "/SmartDashboard/Mechanisms/Commands/LiftMotor/Down": "Command",
@@ -75,6 +79,13 @@
       "/SmartDashboard/Mechanisms/Commands/ShooterMotor/Down": "Command",
       "/SmartDashboard/Mechanisms/Commands/ShooterMotor/Up": "Command",
       "/SmartDashboard/Mechanisms/Commands/ShooterMotor/ZeroEncoder": "Command",
+      "/SmartDashboard/Mechanisms/Commands/Turret/Live Tuning": "Command",
+      "/SmartDashboard/Mechanisms/Commands/TurretMotorConfig/Down": "Command",
+      "/SmartDashboard/Mechanisms/Commands/TurretMotorConfig/Up": "Command",
+      "/SmartDashboard/Mechanisms/Commands/TurretMotorConfig/ZeroEncoder": "Command",
+      "/SmartDashboard/Mechanisms/Commands/indexerMotor/Down": "Command",
+      "/SmartDashboard/Mechanisms/Commands/indexerMotor/Up": "Command",
+      "/SmartDashboard/Mechanisms/Commands/indexerMotor/ZeroEncoder": "Command",
       "/SmartDashboard/Motors": "Alerts",
       "/SmartDashboard/PathPlanner": "Alerts",
       "/SmartDashboard/PhotonAlerts": "Alerts",
@@ -83,17 +94,15 @@
       "/SmartDashboard/SendableChooser[0]": "String Chooser",
       "/SmartDashboard/ShooterConfig/mechanism": "Mechanism2d",
       "/SmartDashboard/Swerve Drive": "Alerts",
+      "/SmartDashboard/TurretPivot/mechanism": "Mechanism2d",
       "/SmartDashboard/VisionSystemSim-Vision/Sim Field": "Field2d",
+      "/SmartDashboard/funnel/mechanism": "Mechanism2d",
+      "/SmartDashboard/indexer/mechanism": "Mechanism2d",
       "/SmartDashboard/navX-Sensor[1]": "Gyro",
       "/SmartDashboard/navX-Sensor[4]": "Gyro"
     },
     "windows": {
       "/FMSInfo": {
-        "window": {
-          "visible": true
-        }
-      },
-      "/SmartDashboard/Arm/mechanism": {
         "window": {
           "visible": true
         }
@@ -130,6 +139,11 @@
         "right": 3942,
         "top": 118,
         "width": 16.54119300842285,
+        "window": {
+          "visible": true
+        }
+      },
+      "/SmartDashboard/TurretPivot/mechanism": {
         "window": {
           "visible": true
         }

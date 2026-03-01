@@ -38,6 +38,11 @@ import yams.motorcontrollers.local.SparkWrapper;
 
 /** Simple turret subsystem that holds a NEO Vortex and a supplier for the robot pose. */
 public class Turret extends SubsystemBase {
+  private enum DeadzoneLatch {
+    LOW_EDGE,
+    HIGH_EDGE
+  }
+
   private final SparkFlex turretMotor =
       new SparkFlex(Constants.Turret.MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
   private final Supplier<Pose2d> getPose;
@@ -58,6 +63,9 @@ public class Turret extends SubsystemBase {
   private double lastRotationCommandDeg = 0.0;
   // Zero-point regulator
   private final TurretZeroPoint zeroPoint;
+  // Dead-zone edge selection state to prevent rapid edge flipping.
+  private DeadzoneLatch deadzoneLatch = DeadzoneLatch.LOW_EDGE;
+  private boolean deadzoneLatchInitialized = false;
 
   /** Default constructor. Uses a trivial Pose2d supplier (origin) when no supplier is provided. */
   public Turret() {
@@ -109,7 +117,9 @@ public class Turret extends SubsystemBase {
     PivotConfig pivotConfig =
         new PivotConfig(turretSmartMotorController)
             .withHardLimit(Degrees.of(0), Degrees.of(360))
-            .withSoftLimits(Degrees.of(30), Degrees.of(330))
+            .withSoftLimits(
+                Degrees.of(Constants.Turret.MIN_ANGLE_DEG),
+                Degrees.of(Constants.Turret.MAX_ANGLE_DEG))
             .withStartingPosition(Degrees.of(180))
             .withTelemetry("TurretPivot", TelemetryVerbosity.HIGH)
             .withMOI(Meters.of(0.254), Pounds.of(2));
@@ -136,7 +146,58 @@ public class Turret extends SubsystemBase {
   }
 
   public Command autoSetAngle() {
-    return turretPivot.setAngle(() -> getRobotRelativeAngle().getMeasure());
+    return turretPivot.setAngle(() -> getLatchedTurretSetpoint().getMeasure());
+  }
+
+  /**
+   * Compute a dead-zone-aware turret setpoint.
+   *
+   * <p>If the raw target angle is outside the legal range, this method holds one dead-zone edge and
+   * only switches to the opposite edge after the raw target clearly moves past the opposite side by
+   * a hysteresis margin.
+   *
+   * @return desired turret angle relative to robot forward, constrained to legal motion range
+   */
+  public Rotation2d getLatchedTurretSetpoint() {
+    Rotation2d raw = getRobotRelativeAngle();
+    double rawDeg = normalizeTo0To360(raw.getDegrees());
+    if (!deadzoneLatchInitialized) {
+      deadzoneLatch = rawDeg < 180.0 ? DeadzoneLatch.LOW_EDGE : DeadzoneLatch.HIGH_EDGE;
+      deadzoneLatchInitialized = true;
+    }
+
+    if (isInLegalRange(rawDeg)) {
+      deadzoneLatch = rawDeg < 180.0 ? DeadzoneLatch.LOW_EDGE : DeadzoneLatch.HIGH_EDGE;
+      return Rotation2d.fromDegrees(rawDeg);
+    }
+
+    if (deadzoneLatch == DeadzoneLatch.LOW_EDGE
+        && rawDeg
+            >= Constants.Turret.MAX_ANGLE_DEG + Constants.Turret.LATCH_SWITCH_HYSTERESIS_DEG) {
+      deadzoneLatch = DeadzoneLatch.HIGH_EDGE;
+    } else if (deadzoneLatch == DeadzoneLatch.HIGH_EDGE
+        && rawDeg
+            <= Constants.Turret.MIN_ANGLE_DEG - Constants.Turret.LATCH_SWITCH_HYSTERESIS_DEG) {
+      deadzoneLatch = DeadzoneLatch.LOW_EDGE;
+    }
+
+    double constrainedDeg =
+        deadzoneLatch == DeadzoneLatch.LOW_EDGE
+            ? Constants.Turret.MIN_ANGLE_DEG + Constants.Turret.EDGE_GUARD_DEG
+            : Constants.Turret.MAX_ANGLE_DEG - Constants.Turret.EDGE_GUARD_DEG;
+    return Rotation2d.fromDegrees(constrainedDeg);
+  }
+
+  private static double normalizeTo0To360(double degrees) {
+    double normalized = degrees % 360.0;
+    if (normalized < 0.0) {
+      normalized += 360.0;
+    }
+    return normalized;
+  }
+
+  private static boolean isInLegalRange(double degrees) {
+    return degrees >= Constants.Turret.MIN_ANGLE_DEG && degrees <= Constants.Turret.MAX_ANGLE_DEG;
   }
 
   /**
