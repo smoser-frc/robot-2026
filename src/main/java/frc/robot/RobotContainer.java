@@ -199,7 +199,7 @@ public class RobotContainer {
         drivebase.driveWithSetpointGeneratorFieldRelative(driveDirectAngleKeyboard);
 
     if (RobotBase.isSimulation()) {
-      drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
+      drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
     } else {
       drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
     }
@@ -247,6 +247,9 @@ public class RobotContainer {
           .a()
           .whileTrue(
               indexSystem.setVelocityindex(AngularVelocity.ofBaseUnits(1.0, DegreesPerSecond)));
+
+      driverXbox.x().whileTrue(new TurretAutoTurn(turret));
+      driverXbox.y().whileTrue(turret.autoSetAngle());
     }
 
     if (DriverStation.isTest()) {
@@ -316,7 +319,7 @@ public class RobotContainer {
               drivebase.driveToPose(
                   new Pose2d(new Translation2d(14, 4), Rotation2d.fromDegrees(0))));
 
-      driverXbox.y().whileTrue(drivebase.sysIdDriveMotorCommand());
+      // driverXbox.y().whileTrue(drivebase.sysIdDriveMotorCommand());
     }
   }
 
