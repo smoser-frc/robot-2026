@@ -90,6 +90,12 @@ public final class Constants {
     public static final double TURRET_SPEED = 0.05;
     // Turret gearing: motor rotations -> turret rotations
     public static final double TURRET_GEAR_RATIO = 40.0;
+    // Turret angle frame is robot-relative signed degrees [-180, 180].
+    public static final double HARD_MIN_DEG = -175.0;
+    public static final double HARD_MAX_DEG = 175.0;
+    public static final double SOFT_MIN_DEG = -165.0;
+    public static final double SOFT_MAX_DEG = 165.0;
+    public static final double STARTING_ANGLE_DEG = 0.0;
     // PID for turret position (motor rotations)
     public static final double TURRET_P = 1.0;
     public static final double TURRET_I = 0.0;
