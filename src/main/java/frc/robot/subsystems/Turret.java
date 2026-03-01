@@ -38,6 +38,19 @@ import yams.motorcontrollers.local.SparkWrapper;
 
 /** Simple turret subsystem that holds a NEO Vortex and a supplier for the robot pose. */
 public class Turret extends SubsystemBase {
+  private static final double TURRET_HARD_MIN_DEG = -175.0;
+  private static final double TURRET_HARD_MAX_DEG = 175.0;
+  private static final double TURRET_SOFT_MIN_DEG = -165.0;
+  private static final double TURRET_SOFT_MAX_DEG = 165.0;
+  private static final double TURRET_STARTING_ANGLE_DEG = 0.0;
+  private static final double DEADZONE_EDGE_GUARD_DEG = 3.0;
+  private static final double DEADZONE_SWITCH_HYSTERESIS_DEG = 10.0;
+
+  private enum DeadzoneLatch {
+    NEGATIVE_EDGE,
+    POSITIVE_EDGE
+  }
+
   private final SparkFlex turretMotor =
       new SparkFlex(Constants.Turret.MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
   private final Supplier<Pose2d> getPose;
@@ -58,6 +71,9 @@ public class Turret extends SubsystemBase {
   private double lastRotationCommandDeg = 0.0;
   // Zero-point regulator
   private final TurretZeroPoint zeroPoint;
+  // Dead-zone edge selection state to prevent rapid edge flipping.
+  private DeadzoneLatch deadzoneLatch = DeadzoneLatch.NEGATIVE_EDGE;
+  private boolean deadzoneLatchInitialized = false;
 
   /** Default constructor. Uses a trivial Pose2d supplier (origin) when no supplier is provided. */
   public Turret() {
@@ -108,9 +124,9 @@ public class Turret extends SubsystemBase {
 
     PivotConfig pivotConfig =
         new PivotConfig(turretSmartMotorController)
-            .withHardLimit(Degrees.of(-175), Degrees.of(175))
-            .withSoftLimits(Degrees.of(-165), Degrees.of(165))
-            .withStartingPosition(Degrees.of(0))
+            .withHardLimit(Degrees.of(TURRET_HARD_MIN_DEG), Degrees.of(TURRET_HARD_MAX_DEG))
+            .withSoftLimits(Degrees.of(TURRET_SOFT_MIN_DEG), Degrees.of(TURRET_SOFT_MAX_DEG))
+            .withStartingPosition(Degrees.of(TURRET_STARTING_ANGLE_DEG))
             .withTelemetry("TurretPivot", TelemetryVerbosity.HIGH)
             .withMOI(Meters.of(0.254), Pounds.of(2));
 
@@ -138,7 +154,48 @@ public class Turret extends SubsystemBase {
   }
 
   public Command autoSetAngle() {
-    return turretPivot.setAngle(() -> getRobotRelativeAngle().getMeasure());
+    return turretPivot.setAngle(() -> getLatchedTurretSetpoint().getMeasure());
+  }
+
+  /**
+   * Compute a dead-zone-aware turret setpoint.
+   *
+   * <p>If the raw target angle is outside the legal range, this method holds one dead-zone edge and
+   * only switches to the opposite edge after the raw target clearly moves past the opposite side by
+   * a hysteresis margin.
+   *
+   * @return desired turret angle relative to robot forward, constrained to legal motion range
+   */
+  public Rotation2d getLatchedTurretSetpoint() {
+    Rotation2d raw = getRobotRelativeAngle();
+    double rawDeg = normalizeToSigned180(raw.getDegrees());
+    if (!deadzoneLatchInitialized) {
+      deadzoneLatch = rawDeg < 0.0 ? DeadzoneLatch.NEGATIVE_EDGE : DeadzoneLatch.POSITIVE_EDGE;
+      deadzoneLatchInitialized = true;
+    }
+
+    if (isInLegalRange(rawDeg)) {
+      deadzoneLatch = rawDeg < 0.0 ? DeadzoneLatch.NEGATIVE_EDGE : DeadzoneLatch.POSITIVE_EDGE;
+      return Rotation2d.fromDegrees(rawDeg);
+    }
+
+    if (deadzoneLatch == DeadzoneLatch.NEGATIVE_EDGE
+        && rawDeg >= TURRET_SOFT_MAX_DEG + DEADZONE_SWITCH_HYSTERESIS_DEG) {
+      deadzoneLatch = DeadzoneLatch.POSITIVE_EDGE;
+    } else if (deadzoneLatch == DeadzoneLatch.POSITIVE_EDGE
+        && rawDeg <= TURRET_SOFT_MIN_DEG - DEADZONE_SWITCH_HYSTERESIS_DEG) {
+      deadzoneLatch = DeadzoneLatch.NEGATIVE_EDGE;
+    }
+
+    double constrainedDeg =
+        deadzoneLatch == DeadzoneLatch.NEGATIVE_EDGE
+            ? TURRET_SOFT_MIN_DEG + DEADZONE_EDGE_GUARD_DEG
+            : TURRET_SOFT_MAX_DEG - DEADZONE_EDGE_GUARD_DEG;
+    return Rotation2d.fromDegrees(constrainedDeg);
+  }
+
+  private static boolean isInLegalRange(double degrees) {
+    return degrees >= TURRET_SOFT_MIN_DEG && degrees <= TURRET_SOFT_MAX_DEG;
   }
 
   /**

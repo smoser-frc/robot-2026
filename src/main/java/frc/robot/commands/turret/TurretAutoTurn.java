@@ -27,7 +27,7 @@ public class TurretAutoTurn extends Command {
 
   @Override
   public void execute() {
-    Rotation2d robotRelative = turret.getRobotRelativeAngle();
+    Rotation2d robotRelative = turret.getLatchedTurretSetpoint();
 
     // Send the setpoint to the turret subsystem.
     turret.setTurretSetpoint(robotRelative);
