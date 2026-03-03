@@ -198,12 +198,11 @@ public class RobotContainer {
     Command driveSetpointGenKeyboard =
         drivebase.driveWithSetpointGeneratorFieldRelative(driveDirectAngleKeyboard);
 
-    drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
-
     if (!DriverStation.isTest()) {
+      drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
       configureCompetitionBindings();
     } else {
-      configureTestBindings(driveFieldOrientedAnglularVelocity);
+      configureTestBindings();
     }
   }
 
@@ -249,9 +248,9 @@ public class RobotContainer {
     }
   }
 
-  private void configureTestBindings(Command driveFieldOrientedAnglularVelocity) {
-    drivebase.setDefaultCommand(
-        driveFieldOrientedAnglularVelocity); // Overrides competition default command.
+  private void configureTestBindings() {
+    Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
+    drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
 
     // driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
     driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
