@@ -189,6 +189,15 @@ public class RobotContainer {
   private void configureBindings() {
     Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
     Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
+    Command driveRobotOrientedAngularVelocity = drivebase.driveFieldOriented(driveRobotOriented);
+    Command driveSetpointGen = drivebase.driveWithSetpointGeneratorFieldRelative(driveDirectAngle);
+    Command driveFieldOrientedDirectAngleKeyboard =
+        drivebase.driveFieldOriented(driveDirectAngleKeyboard);
+    Command driveFieldOrientedAnglularVelocityKeyboard =
+        drivebase.driveFieldOriented(driveAngularVelocityKeyboard);
+    Command driveSetpointGenKeyboard =
+        drivebase.driveWithSetpointGeneratorFieldRelative(driveDirectAngleKeyboard);
+
     drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
 
     if (!DriverStation.isTest()) {
@@ -256,7 +265,8 @@ public class RobotContainer {
     // driverXbox.b().whileTrue(indexSystem.setVelocityindex(60.0));
     driverXbox
         .b()
-        .whileTrue(indexSystem.setVelocityindex(AngularVelocity.ofBaseUnits(1.0, DegreesPerSecond)));
+        .whileTrue(
+            indexSystem.setVelocityindex(AngularVelocity.ofBaseUnits(1.0, DegreesPerSecond)));
     driverXbox
         .y()
         .whileTrue(
