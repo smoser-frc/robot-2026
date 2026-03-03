@@ -189,22 +189,25 @@ public class RobotContainer {
   private void configureBindings() {
     Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
     Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
-    Command driveRobotOrientedAngularVelocity = drivebase.driveFieldOriented(driveRobotOriented);
-    Command driveSetpointGen = drivebase.driveWithSetpointGeneratorFieldRelative(driveDirectAngle);
-    Command driveFieldOrientedDirectAngleKeyboard =
-        drivebase.driveFieldOriented(driveDirectAngleKeyboard);
-    Command driveFieldOrientedAnglularVelocityKeyboard =
-        drivebase.driveFieldOriented(driveAngularVelocityKeyboard);
-    Command driveSetpointGenKeyboard =
-        drivebase.driveWithSetpointGeneratorFieldRelative(driveDirectAngleKeyboard);
+    drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
 
-    if (RobotBase.isSimulation()) {
-      drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
+    if (!DriverStation.isTest()) {
+      configureCompetitionBindings();
     } else {
-      drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
+      configureTestBindings(driveFieldOrientedAnglularVelocity);
     }
+  }
 
-    if (Robot.isSimulation()) {
+  private void configureCompetitionBindings() {
+    driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyroWithAlliance)));
+    driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
+    driverXbox
+        .b()
+        .whileTrue(
+            drivebase.driveToPose(new Pose2d(new Translation2d(14, 4), Rotation2d.fromDegrees(0))));
+    driverXbox.y().whileTrue(drivebase.sysIdDriveMotorCommand());
+
+    if (!RobotBase.isReal()) {
       Pose2d target = new Pose2d(new Translation2d(1, 4), Rotation2d.fromDegrees(90));
       // drivebase.getSwerveDrive().field.getObject("targetPose").setPose(target);
       driveDirectAngleKeyboard.driveToPose(
@@ -212,6 +215,8 @@ public class RobotContainer {
           new ProfiledPIDController(5, 0, 0, new Constraints(5, 2)),
           new ProfiledPIDController(
               5, 0, 0, new Constraints(Units.degreesToRadians(360), Units.degreesToRadians(180))));
+
+      // Simulation-only helper controls to support keyboard/pit workflows.
       driverXbox
           .start()
           .onTrue(
@@ -224,16 +229,6 @@ public class RobotContainer {
                   () -> driveDirectAngleKeyboard.driveToPoseEnabled(true),
                   () -> driveDirectAngleKeyboard.driveToPoseEnabled(false)));
 
-      driverXbox
-          .b()
-          .whileTrue(
-              drivebase.driveToPose(
-                  new Pose2d(new Translation2d(14, 3), Rotation2d.fromDegrees(180))));
-      // Use setAngle() instead of setAngleAndStop() with whileTrue() to avoid restart loop
-      driverXbox.rightBumper().whileTrue(intakeSystem.setAngle(30.0));
-      driverXbox.leftBumper().whileTrue(intakeSystem.setAngle(-10.0));
-
-      // Trigger-based linear arm angle control (KEYBOARD COMPATIBLE)
       liftSimPressureDetected.whileTrue(
           Commands.run(
               () -> {
@@ -242,93 +237,70 @@ public class RobotContainer {
                 SmartDashboard.putNumber("AXIS1", dx_axis1Supplier.getAsDouble() * (110 + 25));
               }));
       liftSimPressureDetected.whileFalse(intakeSystem.setAngle(110.0));
-
-      driverXbox
-          .a()
-          .whileTrue(
-              indexSystem.setVelocityindex(AngularVelocity.ofBaseUnits(1.0, DegreesPerSecond)));
     }
+  }
 
-    if (DriverStation.isTest()) {
-      drivebase.setDefaultCommand(
-          driveFieldOrientedAnglularVelocity); // Overrides drive command above!
+  private void configureTestBindings(Command driveFieldOrientedAnglularVelocity) {
+    drivebase.setDefaultCommand(
+        driveFieldOrientedAnglularVelocity); // Overrides competition default command.
 
-      // driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-      driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-      driverXbox.back().whileTrue(drivebase.centerModulesCommand());
-      // driverXbox.leftBumper().onTrue(Commands.runOnce(pitCheck::start,
-      // drivebase).andThen(pitCheck::execute, drivebase));
-      // This starts the command when you press LB, and stops it immediately when you let go.
-      driverXbox.povDown().whileTrue(new YAGSLPitCheck(drivebase));
-      driverXbox.rightBumper().onTrue(launchSystem.setVelocity(50.0));
-      driverXbox.rightBumper().onFalse(launchSystem.setVelocity(0));
-      // driverXbox.b().whileTrue(indexSystem.setVelocityindex(60.0));
-      driverXbox
-          .b()
-          .whileTrue(
-              indexSystem.setVelocityindex(AngularVelocity.ofBaseUnits(1.0, DegreesPerSecond)));
-      driverXbox
-          .y()
-          .whileTrue(
-              intakeSystem.runCommand(
-                  () -> {
-                    return .99;
-                  }));
+    // driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
+    driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
+    driverXbox.back().whileTrue(drivebase.centerModulesCommand());
+    // driverXbox.leftBumper().onTrue(Commands.runOnce(pitCheck::start,
+    // drivebase).andThen(pitCheck::execute, drivebase));
+    // This starts the command when you press LB, and stops it immediately when you let go.
+    driverXbox.povDown().whileTrue(new YAGSLPitCheck(drivebase));
+    driverXbox.rightBumper().onTrue(launchSystem.setVelocity(50.0));
+    driverXbox.rightBumper().onFalse(launchSystem.setVelocity(0));
+    // driverXbox.b().whileTrue(indexSystem.setVelocityindex(60.0));
+    driverXbox
+        .b()
+        .whileTrue(indexSystem.setVelocityindex(AngularVelocity.ofBaseUnits(1.0, DegreesPerSecond)));
+    driverXbox
+        .y()
+        .whileTrue(
+            intakeSystem.runCommand(
+                () -> {
+                  return .99;
+                }));
 
-      // Replaced by the trigger command below
-      // driverXbox.a().onTrue(intakeSystem.setAngle(-25.0));
-      // driverXbox.x().onTrue(intakeSystem.setAngle(110.0));
+    // Replaced by the trigger command below
+    // driverXbox.a().onTrue(intakeSystem.setAngle(-25.0));
+    // driverXbox.x().onTrue(intakeSystem.setAngle(110.0));
 
-      // Trigger-based linear arm angle control
-      liftPressureDetected.whileTrue(
-          Commands.run(
-                  () -> {
-                    double angle = 110 - dx_leftTriggerSupplier.getAsDouble() * (110 + 25);
-                    intakeSystem.setAngle(angle).schedule();
-                    SmartDashboard.putNumber(
-                        "AXIS1 - LIFT (DEGREES)",
-                        dx_leftTriggerSupplier.getAsDouble() * (110 + 25));
-                  })
-              .onlyIf(() -> !liftPressureMaxed.getAsBoolean()));
-      liftPressureDetected.onFalse(intakeSystem.setAngle(110.0));
-      driverXbox
-          .leftBumper()
-          .onTrue(
-              Commands.runOnce(
-                  () -> {
-                    if (intakeSystem.getRollerSpeed().get() <= 0.1) {
-                      intakeSystem.setRollerSpeed(0.99);
-                    } else {
-                      intakeSystem.stopRoller();
-                    }
-                  }));
-      liftPressureMaxed.whileTrue(Commands.run(() -> intakeSystem.fullDeploy()));
-      // liftPressureMaxed.onFalse(Commands.runOnce(() -> intakeSystem.stopRoller()));
+    // Trigger-based linear arm angle control
+    liftPressureDetected.whileTrue(
+        Commands.run(
+                () -> {
+                  double angle = 110 - dx_leftTriggerSupplier.getAsDouble() * (110 + 25);
+                  intakeSystem.setAngle(angle).schedule();
+                  SmartDashboard.putNumber(
+                      "AXIS1 - LIFT (DEGREES)", dx_leftTriggerSupplier.getAsDouble() * (110 + 25));
+                })
+            .onlyIf(() -> !liftPressureMaxed.getAsBoolean()));
+    liftPressureDetected.onFalse(intakeSystem.setAngle(110.0));
+    driverXbox
+        .leftBumper()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  if (intakeSystem.getRollerSpeed().get() <= 0.1) {
+                    intakeSystem.setRollerSpeed(0.99);
+                  } else {
+                    intakeSystem.stopRoller();
+                  }
+                }));
+    liftPressureMaxed.whileTrue(Commands.run(() -> intakeSystem.fullDeploy()));
+    // liftPressureMaxed.onFalse(Commands.runOnce(() -> intakeSystem.stopRoller()));
 
-      // Trigger-based shot control
-      Command startSequence = launchSystem.shotSequenceStart(indexSystem);
-      startSequence.addRequirements(launchSystem, indexSystem);
-      // Medium pressure: start AutoTurn
-      // shotPressureDetected.whileTrue(new TurretAutoTurn(turret));
-      // Full pressure: start shooting and indexing sequence
-      shotPressureMaxed.whileTrue(startSequence);
-
-    } else {
-      driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyroWithAlliance)));
-      // driverXbox.x().onTrue(Commands.runOnce(drivebase::addFakeVisionReading));
-      driverXbox.start().whileTrue(Commands.none());
-      driverXbox.back().whileTrue(Commands.none());
-      driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-      driverXbox.rightBumper().onTrue(Commands.none());
-
-      driverXbox
-          .b()
-          .whileTrue(
-              drivebase.driveToPose(
-                  new Pose2d(new Translation2d(14, 4), Rotation2d.fromDegrees(0))));
-
-      driverXbox.y().whileTrue(drivebase.sysIdDriveMotorCommand());
-    }
+    // Trigger-based shot control
+    Command startSequence = launchSystem.shotSequenceStart(indexSystem);
+    startSequence.addRequirements(launchSystem, indexSystem);
+    // Medium pressure: start AutoTurn
+    // shotPressureDetected.whileTrue(new TurretAutoTurn(turret));
+    // Full pressure: start shooting and indexing sequence
+    shotPressureMaxed.whileTrue(startSequence);
   }
 
   /**
