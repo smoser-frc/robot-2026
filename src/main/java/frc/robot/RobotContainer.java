@@ -208,12 +208,30 @@ public class RobotContainer {
 
   private void configureCompetitionBindings() {
     driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyroWithAlliance)));
-    driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-    driverXbox
-        .b()
-        .whileTrue(
-            drivebase.driveToPose(new Pose2d(new Translation2d(14, 4), Rotation2d.fromDegrees(0))));
     driverXbox.y().whileTrue(drivebase.sysIdDriveMotorCommand());
+    liftSimPressureDetected.whileTrue(
+        Commands.run(
+            () -> {
+              double angle = 110 - dx_axis1Supplier.getAsDouble() * (110 + 25);
+              intakeSystem.setAngle(angle).schedule();
+              SmartDashboard.putNumber("AXIS1", dx_axis1Supplier.getAsDouble() * (110 + 25));
+            }));
+    liftSimPressureDetected.whileFalse(intakeSystem.setAngle(110.0));
+
+    driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
+
+    liftPressureDetected.whileTrue(
+        Commands.run(
+                () -> {
+                  double angle = 110 - dx_leftTriggerSupplier.getAsDouble() * (110 + 25);
+                  intakeSystem.setAngle(angle).schedule();
+                  SmartDashboard.putNumber(
+                      "AXIS1 - LIFT (DEGREES)", dx_leftTriggerSupplier.getAsDouble() * (110 + 25));
+                })
+            .onlyIf(() -> !liftPressureMaxed.getAsBoolean()));
+    liftPressureDetected.onFalse(intakeSystem.setAngle(110.0));
+    liftPressureMaxed.whileTrue(Commands.run(() -> intakeSystem.fullDeploy()));
+    // liftPressureMaxed.onFalse(Commands.runOnce(() -> intakeSystem.stopRoller()));
 
     if (!RobotBase.isReal()) {
       Pose2d target = new Pose2d(new Translation2d(1, 4), Rotation2d.fromDegrees(90));
@@ -229,22 +247,12 @@ public class RobotContainer {
           .start()
           .onTrue(
               Commands.runOnce(() -> drivebase.resetOdometry(new Pose2d(3, 3, new Rotation2d()))));
-      driverXbox.button(1).whileTrue(drivebase.sysIdDriveMotorCommand());
       driverXbox
-          .button(2)
+          .b()
           .whileTrue(
               Commands.runEnd(
                   () -> driveDirectAngleKeyboard.driveToPoseEnabled(true),
                   () -> driveDirectAngleKeyboard.driveToPoseEnabled(false)));
-
-      liftSimPressureDetected.whileTrue(
-          Commands.run(
-              () -> {
-                double angle = 110 - dx_axis1Supplier.getAsDouble() * (110 + 25);
-                intakeSystem.setAngle(angle).schedule();
-                SmartDashboard.putNumber("AXIS1", dx_axis1Supplier.getAsDouble() * (110 + 25));
-              }));
-      liftSimPressureDetected.whileFalse(intakeSystem.setAngle(110.0));
     }
   }
 
@@ -252,20 +260,11 @@ public class RobotContainer {
     Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
     drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
 
-    // driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-    driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-    driverXbox.back().whileTrue(drivebase.centerModulesCommand());
-    // driverXbox.leftBumper().onTrue(Commands.runOnce(pitCheck::start,
-    // drivebase).andThen(pitCheck::execute, drivebase));
-    // This starts the command when you press LB, and stops it immediately when you let go.
-    driverXbox.povDown().whileTrue(new YAGSLPitCheck(drivebase));
-    driverXbox.rightBumper().onTrue(launchSystem.setVelocity(50.0));
-    driverXbox.rightBumper().onFalse(launchSystem.setVelocity(0));
-    // driverXbox.b().whileTrue(indexSystem.setVelocityindex(60.0));
     driverXbox
         .b()
         .whileTrue(
             indexSystem.setVelocityindex(AngularVelocity.ofBaseUnits(1.0, DegreesPerSecond)));
+    driverXbox.x().whileTrue(drivebase.sysIdDriveMotorCommand());
     driverXbox
         .y()
         .whileTrue(
@@ -274,21 +273,13 @@ public class RobotContainer {
                   return .99;
                 }));
 
-    // Replaced by the trigger command below
-    // driverXbox.a().onTrue(intakeSystem.setAngle(-25.0));
-    // driverXbox.x().onTrue(intakeSystem.setAngle(110.0));
+    driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
+    driverXbox.back().whileTrue(drivebase.centerModulesCommand());
+    // driverXbox.leftBumper().onTrue(Commands.runOnce(pitCheck::start,
+    // drivebase).andThen(pitCheck::execute, drivebase));
+    // This starts the command when you press LB, and stops it immediately when you let go.
+    driverXbox.povDown().whileTrue(new YAGSLPitCheck(drivebase));
 
-    // Trigger-based linear arm angle control
-    liftPressureDetected.whileTrue(
-        Commands.run(
-                () -> {
-                  double angle = 110 - dx_leftTriggerSupplier.getAsDouble() * (110 + 25);
-                  intakeSystem.setAngle(angle).schedule();
-                  SmartDashboard.putNumber(
-                      "AXIS1 - LIFT (DEGREES)", dx_leftTriggerSupplier.getAsDouble() * (110 + 25));
-                })
-            .onlyIf(() -> !liftPressureMaxed.getAsBoolean()));
-    liftPressureDetected.onFalse(intakeSystem.setAngle(110.0));
     driverXbox
         .leftBumper()
         .onTrue(
@@ -300,6 +291,19 @@ public class RobotContainer {
                     intakeSystem.stopRoller();
                   }
                 }));
+    driverXbox.rightBumper().onTrue(launchSystem.setVelocity(50.0));
+    driverXbox.rightBumper().onFalse(launchSystem.setVelocity(0));
+
+    liftPressureDetected.whileTrue(
+        Commands.run(
+                () -> {
+                  double angle = 110 - dx_leftTriggerSupplier.getAsDouble() * (110 + 25);
+                  intakeSystem.setAngle(angle).schedule();
+                  SmartDashboard.putNumber(
+                      "AXIS1 - LIFT (DEGREES)", dx_leftTriggerSupplier.getAsDouble() * (110 + 25));
+                })
+            .onlyIf(() -> !liftPressureMaxed.getAsBoolean()));
+    liftPressureDetected.onFalse(intakeSystem.setAngle(110.0));
     liftPressureMaxed.whileTrue(Commands.run(() -> intakeSystem.fullDeploy()));
     // liftPressureMaxed.onFalse(Commands.runOnce(() -> intakeSystem.stopRoller()));
 
